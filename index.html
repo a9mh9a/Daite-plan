@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1e293b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Daite Plan">
+    <link id="manifest-link" rel="manifest" href="">
+    <title>Daite Plan Health</title>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+        :root {
+            --bg-gradient: linear-gradient(135deg, #e0eafc, #cfdef3);
+            --glass-bg: rgba(255, 255, 255, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.8);
+            --text-main: #1e293b;
+            --text-muted: #475569;
+            --primary-color: #3b82f6;
+            --danger-color: #ef4444;
+            --success-color: #22c55e;
+            --warning-color: #f59e0b;
+            --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-gradient: linear-gradient(135deg, #0f172a, #1e293b);
+                --glass-bg: rgba(15, 23, 42, 0.7);
+                --glass-border: rgba(255, 255, 255, 0.1);
+                --text-main: #f8fafc;
+                --text-muted: #94a3b8;
+                --primary-color: #60a5fa;
+                --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+            }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg-gradient); color: var(--text-main); min-height: 100vh; overflow-x: hidden; }
+        
+        #app-container { width: 100%; max-width: 480px; margin: 0 auto; padding: 20px; padding-bottom: 80px;}
+
+        .screen, .modal { display: none; animation: fadeIn 0.4s ease-in-out; flex-direction: column; gap: 15px; }
+        .screen.active, .modal.active { display: flex; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .glass-card { background: var(--glass-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; box-shadow: var(--card-shadow); position: relative; }
+
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .header h1 { font-size: 24px; }
+        
+        input, select { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(255, 255, 255, 0.1); color: var(--text-main); font-size: 15px; outline: none; margin-bottom: 12px; }
+        input:focus, select:focus { border-color: var(--primary-color); }
+        
+        .btn { background: var(--primary-color); color: #fff; border: none; padding: 14px; border-radius: 14px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px;}
+        .btn:active { transform: scale(0.95); }
+        .btn-outline { background: transparent; border: 2px solid var(--primary-color); color: var(--primary-color); }
+
+        .trackers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .tracker-card { display: flex; flex-direction: column; align-items: center; text-align: center; }
+        .circle { width: 90px; height: 90px; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-bottom: 10px; background: conic-gradient(var(--primary-color) 0%, var(--glass-border) 0%); transition: background 0.5s; }
+        .circle-inner { width: 75px; height: 75px; border-radius: 50%; background: var(--glass-bg); display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 14px; font-weight: bold; }
+        .circle-inner span { font-size: 10px; color: var(--text-muted); font-weight: normal; }
+        
+        .tracker-controls { display: flex; gap: 10px; margin-top: 10px; width: 100%; }
+        .tracker-controls button { flex: 1; padding: 8px; border-radius: 8px; border: none; background: rgba(255,255,255,0.2); color: var(--text-main); font-weight: bold; cursor: pointer; }
+
+        /* Meals List & History */
+        .meal-item, .history-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--glass-border); }
+        .meal-item:last-child, .history-item:last-child { border-bottom: none; }
+        .meal-info h4 { font-size: 15px; margin-bottom: 2px;}
+        .meal-info p { font-size: 12px; color: var(--text-muted); }
+        .meal-cals { font-weight: bold; color: var(--primary-color); }
+        .action-btns { display: flex; gap: 8px; }
+        .icon-btn { background: none; border: none; font-size: 16px; cursor: pointer; opacity: 0.7; transition: 0.2s;}
+        .icon-btn:hover { opacity: 1; transform: scale(1.1);}
+
+        /* Modals */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 100; display: none; justify-content: center; align-items: center; padding: 20px; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { width: 100%; max-width: 400px; max-height: 90vh; overflow-y: auto; }
+
+        /* Toast Notifications */
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: rgba(15, 23, 42, 0.9); color: white; padding: 15px 20px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 1000; display: flex; align-items: center; gap: 10px; font-size: 14px; opacity: 0; transition: 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55); backdrop-filter: blur(10px); width: 90%; max-width: 400px;}
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <span id="toast-icon">💡</span>
+        <span id="toast-msg">رسالة تحفيزية هنا</span>
+    </div>
+
+    <div id="app-container">
+        
+        <!-- شاشة التسجيل (أول مرة فقط) -->
+        <div id="registration-screen" class="screen glass-card">
+            <h1>إعداد الملف الصحي 🚀</h1>
+            <form id="setup-form">
+                <input type="text" id="userName" placeholder="الاسم" required>
+                <div class="trackers-grid">
+                    <input type="number" id="userWeight" placeholder="الوزن (كجم)" required>
+                    <input type="number" id="userHeight" placeholder="الطول (سم)" required>
+                </div>
+                <h3 style="margin: 10px 0; font-size: 16px;">أهدافك اليومية:</h3>
+                <input type="number" id="goalCalories" placeholder="السعرات الحرارية (مثال: 2000)" required>
+                <div class="trackers-grid">
+                    <input type="number" id="goalWater" placeholder="أكواب الماء (مثال: 8)" required>
+                    <input type="number" id="goalSteps" placeholder="الخطوات (مثال: 10000)" required>
+                </div>
+                <button type="submit" class="btn" id="submitBtn">حفظ وبدء التطبيق</button>
+            </form>
+        </div>
+
+        <!-- الشاشة الرئيسية (لوحة التحكم) -->
+        <div id="dashboard-screen" class="screen">
+            <div class="header">
+                <div>
+                    <h1 id="display-name">مرحباً</h1>
+                    <p id="current-date-display"></p>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="icon-btn" style="font-size: 24px;" onclick="openModal('history-modal'); loadHistory();">📅</button>
+                    <button class="icon-btn" style="font-size: 24px;" onclick="openModal('settings-modal')">⚙️</button>
+                </div>
+            </div>
+
+            <!-- الكارت العلوي (الوزن و BMI) -->
+            <div class="glass-card trackers-grid" style="align-items: center;">
+                <div style="text-align: center;">
+                    <p style="font-size: 12px;">مؤشر (BMI)</p>
+                    <h2 id="display-bmi" style="color: var(--primary-color);">0.0</h2>
+                </div>
+                <div style="text-align: center; border-right: 1px solid var(--glass-border);">
+                    <p style="font-size: 12px;">الوزن الحالي</p>
+                    <h2><span id="display-weight">0</span> كجم</h2>
+                    <button onclick="updateWeightPrompt()" style="font-size: 11px; background: none; border: none; color: var(--primary-color); text-decoration: underline; cursor: pointer;">✏️ تعديل الوزن</button>
+                </div>
+            </div>
+
+            <!-- دوائر الأهداف -->
+            <div class="glass-card trackers-grid" style="grid-template-columns: 1fr;">
+                <div class="tracker-card" style="flex-direction: row; justify-content: space-around;">
+                    <div class="circle" id="circle-cals">
+                        <div class="circle-inner">
+                            <b id="cals-consumed">0</b>
+                            <span>من <span id="cals-goal">0</span></span>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <h3>🔥 السعرات</h3>
+                        <p style="font-size: 13px; color: var(--text-muted);">المتبقي: <span id="cals-remaining" style="font-weight:bold;">0</span></p>
+                        <button class="btn" style="padding: 8px; margin-top: 10px; font-size: 12px;" onclick="prepareMealForm()">+ إضافة وجبة</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="trackers-grid">
+                <!-- الماء -->
+                <div class="glass-card tracker-card">
+                    <h3>💧 الماء</h3>
+                    <div class="circle" id="circle-water" style="width: 70px; height: 70px; margin-top: 10px;">
+                        <div class="circle-inner" style="width: 55px; height: 55px;">
+                            <b id="water-count">0</b>
+                        </div>
+                    </div>
+                    <div class="tracker-controls">
+                        <button onclick="updateTracker('water', -1)">-</button>
+                        <button onclick="updateTracker('water', 1)">+</button>
+                    </div>
+                </div>
+
+                <!-- المشي -->
+                <div class="glass-card tracker-card">
+                    <h3>🚶‍♂️ المشي</h3>
+                    <div class="circle" id="circle-steps" style="width: 70px; height: 70px; margin-top: 10px;">
+                        <div class="circle-inner" style="width: 55px; height: 55px;">
+                            <b id="steps-count">0</b>
+                        </div>
+                    </div>
+                    <div class="tracker-controls">
+                        <button onclick="editStepsPrompt()"> +</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- قائمة وجبات اليوم -->
+            <div class="glass-card">
+                <h3>🍽️ وجبات اليوم</h3>
+                <div id="meals-list" style="margin-top: 10px;"></div>
+            </div>
+
+            <button class="btn btn-outline" style="margin-top: 10px;" onclick="openModal('report-modal'); generateReport();">📊 التقرير الشامل</button>
+        </div>
+    </div>
+
+    <!-- ======== النوافذ المنبثقة (Modals) ======== -->
+
+    <!-- 1. نافذة الوجبات (إضافة / تعديل) -->
+    <div id="meal-modal" class="modal-overlay">
+        <div class="glass-card modal-content">
+            <div class="header">
+                <h2 id="meal-modal-title">إضافة وجبة</h2>
+                <button class="icon-btn" onclick="closeModal('meal-modal')">❌</button>
+            </div>
+            <form id="meal-form">
+                <input type="hidden" id="editingMealId" value="">
+                <select id="mealType">
+                    <option value="إفطار">إفطار 🍳</option>
+                    <option value="غداء">غداء 🍲</option>
+                    <option value="عشاء">عشاء 🥗</option>
+                    <option value="سناك">سناك 🍎</option>
+                </select>
+                <input type="text" id="mealName" placeholder="ماذا أكلت؟" required>
+                <input type="number" id="mealCals" placeholder="عدد السعرات" required>
+                <button type="submit" class="btn">حفظ</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. نافذة الأيام السابقة (History) -->
+    <div id="history-modal" class="modal-overlay">
+        <div class="glass-card modal-content">
+            <div class="header">
+                <h2>سجل الأيام السابقة 📅</h2>
+                <button class="icon-btn" onclick="closeModal('history-modal')">❌</button>
+            </div>
+            <div id="history-list" style="margin-top: 15px;">
+                <p style="text-align:center;">جاري التحميل...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. التقرير الشامل -->
+    <div id="report-modal" class="modal-overlay">
+        <div class="glass-card modal-content">
+            <div class="header">
+                <h2>التقرير 📈</h2>
+                <button class="icon-btn" onclick="closeModal('report-modal')">❌</button>
+            </div>
+            <div id="report-content" style="text-align: center; margin-top: 15px;"></div>
+        </div>
+    </div>
+
+    <!-- 4. تعديل الأهداف (Settings) -->
+    <div id="settings-modal" class="modal-overlay">
+        <div class="glass-card modal-content">
+            <div class="header">
+                <h2>تعديل أهدافي 🎯</h2>
+                <button class="icon-btn" onclick="closeModal('settings-modal')">❌</button>
+            </div>
+            <form id="settings-form">
+                <label style="font-size: 12px; color: var(--text-muted);">هدف السعرات</label>
+                <input type="number" id="editGoalCals" required>
+                <label style="font-size: 12px; color: var(--text-muted);">هدف الماء (أكواب)</label>
+                <input type="number" id="editGoalWater" required>
+                <label style="font-size: 12px; color: var(--text-muted);">هدف المشي (خطوات)</label>
+                <input type="number" id="editGoalSteps" required>
+                <button type="submit" class="btn">حفظ التعديلات</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ======== حقن الـ Manifest ======== -->
+    <script>
+        const appManifest = {
+            "name": "Daite Plan Health", "short_name": "Daite Plan", "display": "standalone",
+            "background_color": "#0f172a", "theme_color": "#3b82f6",
+            "icons":[ {"src": "https://cdn-icons-png.flaticon.com/512/2966/2966327.png", "sizes": "512x512", "type": "image/png"} ]
+        };
+        document.getElementById('manifest-link').setAttribute('href', `data:application/manifest+json;charset=utf-8,${encodeURIComponent(JSON.stringify(appManifest))}`);
+    </script>
+
+    <!-- ======== منطق التطبيق و Firebase ======== -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+        import { getDatabase, ref, set, get, update, push, remove } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDZrPCJu2wvmYNvuLN1iRU__spr2KGK91U",
+            authDomain: "daite-plan.firebaseapp.com",
+            databaseURL: "https://daite-plan-default-rtdb.firebaseio.com",
+            projectId: "daite-plan",
+            storageBucket: "daite-plan.firebasestorage.app"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let currentUser = null;
+        let todayDate = new Date().toISOString().split('T')[0]; 
+        let todayData = { calories: 0, water: 0, steps: 0, meals: {} };
+
+        window.openModal = (id) => document.getElementById(id).classList.add('active');
+        window.closeModal = (id) => document.getElementById(id).classList.remove('active');
+
+        // إشعار التحفيز (Toast)
+        function showToast(msg, icon = '💡', duration = 5000) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            document.getElementById('toast-icon').innerText = icon;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), duration);
+        }
+
+        // تحديث الدوائر UI
+        function updateCircleUI(id, current, max, color) {
+            let percentage = Math.min((current / max) * 100, 100);
+            if(isNaN(percentage)) percentage = 0;
+            document.getElementById(id).style.background = `conic-gradient(${color} ${percentage}%, var(--glass-border) ${percentage}%)`;
+        }
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            const localId = localStorage.getItem('daite_uid');
+            document.getElementById('current-date-display').innerText = new Date().toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            
+            if (localId) {
+                await loadUserData(localId);
+            } else {
+                document.getElementById('registration-screen').classList.add('active');
+            }
+        });
+
+        document.getElementById('setup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            document.getElementById('submitBtn').innerText = "جاري التحضير...";
+            const newUid = 'user_' + Date.now();
+            const profile = {
+                name: document.getElementById('userName').value,
+                weight: parseFloat(document.getElementById('userWeight').value),
+                height: parseFloat(document.getElementById('userHeight').value),
+                initialWeight: parseFloat(document.getElementById('userWeight').value),
+                goals: {
+                    calories: parseInt(document.getElementById('goalCalories').value),
+                    water: parseInt(document.getElementById('goalWater').value),
+                    steps: parseInt(document.getElementById('goalSteps').value)
+                }
+            };
+            await set(ref(db, `users/${newUid}/profile`), profile);
+            localStorage.setItem('daite_uid', newUid);
+            await loadUserData(newUid);
+            showToast("تم إعداد حسابك بنجاح! لتبدأ رحلتك الآن.", "🎉");
+        });
+
+        async function loadUserData(uid) {
+            document.getElementById('registration-screen').classList.remove('active');
+            
+            const profileSnap = await get(ref(db, `users/${uid}/profile`));
+            if(!profileSnap.exists()) {
+                localStorage.removeItem('daite_uid'); location.reload(); return;
+            }
+            currentUser = { uid, ...profileSnap.val() };
+            
+            // تعبئة بيانات الإعدادات
+            document.getElementById('editGoalCals').value = currentUser.goals.calories;
+            document.getElementById('editGoalWater').value = currentUser.goals.water;
+            document.getElementById('editGoalSteps').value = currentUser.goals.steps;
+            
+            document.getElementById('display-name').innerText = currentUser.name;
+            document.getElementById('display-weight').innerText = currentUser.weight;
+            document.getElementById('cals-goal').innerText = currentUser.goals.calories;
+
+            const hM = currentUser.height / 100;
+            document.getElementById('display-bmi').innerText = (currentUser.weight / (hM * hM)).toFixed(1);
+
+            const todaySnap = await get(ref(db, `users/${uid}/logs/${todayDate}`));
+            if(todaySnap.exists()) {
+                todayData = todaySnap.val();
+                if(!todayData.meals) todayData.meals = {};
+            } else {
+                todayData = { calories: 0, water: 0, steps: 0, meals: {} };
+                await set(ref(db, `users/${uid}/logs/${todayDate}`), todayData);
+            }
+
+            refreshDashboardUI();
+            document.getElementById('dashboard-screen').classList.add('active');
+
+            // منطق الرسائل التحفيزية بعد الدخول
+            analyzeAndMotivate(uid);
+        }
+
+        async function analyzeAndMotivate(uid) {
+            const logsSnap = await get(ref(db, `users/${uid}/logs`));
+            if(!logsSnap.exists()) return;
+            const logs = logsSnap.val();
+            let dates = Object.keys(logs).sort().reverse();
+            
+            if(dates.length >= 2) {
+                let yesterdayData = logs[dates[1]]; // إذا كان 0 هو اليوم، 1 هو البارحة
+                if(yesterdayData && yesterdayData.calories <= currentUser.goals.calories && yesterdayData.calories > 0) {
+                    showToast("لقد التزمت بهدفك أمس! استمر لليوم وستلاحظ فرقاً في وزنك قريباً! 🔥", "🏆", 7000);
+                } else if(yesterdayData && yesterdayData.water >= currentUser.goals.water) {
+                    showToast("ترطيب جسمك كان ممتازاً أمس، حافظ على شرب الماء اليوم أيضاً! 💧", "🌊", 7000);
+                } else {
+                    showToast("يوم جديد، فرصة جديدة لتحقيق أهدافك، نحن نؤمن بك! 💪", "✨");
+                }
+            } else {
+                showToast("بداية موفقة! تسجيل وجباتك هو نصف طريق النجاح.", "🎯");
+            }
+        }
+
+        function refreshDashboardUI() {
+            document.getElementById('water-count').innerText = todayData.water;
+            updateCircleUI('circle-water', todayData.water, currentUser.goals.water, '#0ea5e9');
+            
+            document.getElementById('steps-count').innerText = todayData.steps;
+            updateCircleUI('circle-steps', todayData.steps, currentUser.goals.steps, '#22c55e');
+
+            let totalCals = 0;
+            const mealsDiv = document.getElementById('meals-list');
+            mealsDiv.innerHTML = '';
+
+            for (let key in todayData.meals) {
+                let m = todayData.meals[key];
+                totalCals += parseInt(m.calories);
+                mealsDiv.innerHTML += `
+                    <div class="meal-item">
+                        <div class="meal-info">
+                            <h4>${m.type}</h4>
+                            <p>${m.name}</p>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:15px;">
+                            <span class="meal-cals">${m.calories} سعرة</span>
+                            <div class="action-btns">
+                                <button class="icon-btn" onclick="editMeal('${key}')">✏️</button>
+                                <button class="icon-btn" onclick="deleteMeal('${key}')">🗑️</button>
+                            </div>
+                        </div>
+                    </div>`;
+            }
+
+            if(Object.keys(todayData.meals).length === 0) {
+                mealsDiv.innerHTML = '<p style="text-align:center; color:var(--text-muted); font-size:12px;">لم يتم إضافة وجبات اليوم بعد.</p>';
+            }
+
+            todayData.calories = totalCals;
+            document.getElementById('cals-consumed').innerText = totalCals;
+            let remaining = currentUser.goals.calories - totalCals;
+            let remSpan = document.getElementById('cals-remaining');
+            remSpan.innerText = remaining;
+            remSpan.style.color = remaining < 0 ? 'var(--danger-color)' : 'var(--success-color)';
+            
+            updateCircleUI('circle-cals', totalCals, currentUser.goals.calories, remaining < 0 ? '#ef4444' : '#f59e0b');
+        }
+
+        // --- إضافة أو تعديل الوجبة ---
+        window.prepareMealForm = () => {
+            document.getElementById('meal-form').reset();
+            document.getElementById('editingMealId').value = "";
+            document.getElementById('meal-modal-title').innerText = "إضافة وجبة";
+            openModal('meal-modal');
+        }
+
+        window.editMeal = (key) => {
+            let m = todayData.meals[key];
+            document.getElementById('mealType').value = m.type;
+            document.getElementById('mealName').value = m.name;
+            document.getElementById('mealCals').value = m.calories;
+            document.getElementById('editingMealId').value = key;
+            document.getElementById('meal-modal-title').innerText = "تعديل الوجبة";
+            openModal('meal-modal');
+        };
+
+        window.deleteMeal = async (key) => {
+            if(confirm("هل أنت متأكد من حذف هذه الوجبة؟")) {
+                let mCals = todayData.meals[key].calories;
+                delete todayData.meals[key];
+                todayData.calories -= mCals;
+                await remove(ref(db, `users/${currentUser.uid}/logs/${todayDate}/meals/${key}`));
+                await update(ref(db, `users/${currentUser.uid}/logs/${todayDate}`), { calories: todayData.calories });
+                refreshDashboardUI();
+                showToast("تم حذف الوجبة.", "🗑️");
+            }
+        };
+
+        document.getElementById('meal-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const mealId = document.getElementById('editingMealId').value;
+            const meal = {
+                type: document.getElementById('mealType').value,
+                name: document.getElementById('mealName').value,
+                calories: parseInt(document.getElementById('mealCals').value)
+            };
+
+            if(mealId) {
+                // وضع التعديل
+                await update(ref(db, `users/${currentUser.uid}/logs/${todayDate}/meals/${mealId}`), meal);
+                todayData.meals[mealId] = meal;
+                showToast("تم تعديل الوجبة.", "✏️");
+            } else {
+                // وضع الإضافة
+                const newMealRef = push(ref(db, `users/${currentUser.uid}/logs/${todayDate}/meals`));
+                await set(newMealRef, meal);
+                todayData.meals[newMealRef.key] = meal;
+                showToast("تم إضافة الوجبة.", "✅");
+            }
+
+            // تحديث السعرات الإجمالية
+            let total = 0; for(let k in todayData.meals) total += todayData.meals[k].calories;
+            todayData.calories = total;
+            await update(ref(db, `users/${currentUser.uid}/logs/${todayDate}`), { calories: total });
+
+            closeModal('meal-modal');
+            refreshDashboardUI();
+        });
+
+        // --- تعديل وتحديث المشي والماء ---
+        window.updateTracker = async (type, amount) => {
+            let newVal = todayData[type] + amount;
+            if(newVal < 0) newVal = 0;
+            todayData[type] = newVal;
+            await update(ref(db, `users/${currentUser.uid}/logs/${todayDate}`), { [type]: newVal });
+            refreshDashboardUI();
+        };
+
+        window.editStepsPrompt = async () => {
+            let val = prompt("أدخل عدد الخطوات الصحيح لليوم:", todayData.steps);
+            if(val !== null && !isNaN(val) && val !== "") {
+                todayData.steps = parseInt(val);
+                await update(ref(db, `users/${currentUser.uid}/logs/${todayDate}`), { steps: todayData.steps });
+                refreshDashboardUI();
+            }
+        };
+
+        window.updateWeightPrompt = async () => {
+            let newW = prompt("أدخل وزنك الحالي (كجم):", currentUser.weight);
+            if(newW && !isNaN(newW)) {
+                await update(ref(db, `users/${currentUser.uid}/profile`), { weight: parseFloat(newW) });
+                currentUser.weight = parseFloat(newW);
+                document.getElementById('display-weight').innerText = currentUser.weight;
+                const hM = currentUser.height / 100;
+                document.getElementById('display-bmi').innerText = (currentUser.weight / (hM * hM)).toFixed(1);
+                showToast("تم تحديث الوزن بنجاح!", "⚖️");
+            }
+        };
+
+        // --- تعديل الأهداف الأساسية ---
+        document.getElementById('settings-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            currentUser.goals.calories = parseInt(document.getElementById('editGoalCals').value);
+            currentUser.goals.water = parseInt(document.getElementById('editGoalWater').value);
+            currentUser.goals.steps = parseInt(document.getElementById('editGoalSteps').value);
+            
+            await update(ref(db, `users/${currentUser.uid}/profile/goals`), currentUser.goals);
+            document.getElementById('cals-goal').innerText = currentUser.goals.calories;
+            closeModal('settings-modal');
+            refreshDashboardUI();
+            showToast("تم تحديث أهدافك!", "🎯");
+        });
+
+        // --- سجل الأيام السابقة (History) ---
+        window.loadHistory = async () => {
+            const histDiv = document.getElementById('history-list');
+            histDiv.innerHTML = '<p style="text-align:center;">جاري التحميل...</p>';
+            
+            const logsSnap = await get(ref(db, `users/${currentUser.uid}/logs`));
+            if(!logsSnap.exists()) {
+                histDiv.innerHTML = '<p style="text-align:center;">لا توجد أيام سابقة مسجلة.</p>';
+                return;
+            }
+
+            let logs = logsSnap.val();
+            let dates = Object.keys(logs).sort().reverse();
+            histDiv.innerHTML = '';
+            let hasHistory = false;
+
+            dates.forEach(date => {
+                if(date !== todayDate) { // لا تعرض اليوم الحالي في السجل
+                    hasHistory = true;
+                    let d = logs[date];
+                    histDiv.innerHTML += `
+                        <div class="glass-card" style="margin-bottom: 10px; padding: 15px;">
+                            <h4 style="margin-bottom: 10px; color: var(--primary-color);">${date}</h4>
+                            <div style="display:flex; justify-content:space-between; font-size:12px;">
+                                <span>🔥 سعرات: ${d.calories || 0}</span>
+                                <span>💧 ماء: ${d.water || 0}</span>
+                                <span>🚶‍♂️ مشي: ${d.steps || 0}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            if(!hasHistory) histDiv.innerHTML = '<p style="text-align:center; color: var(--text-muted);">لا توجد بيانات للأيام السابقة بعد.</p>';
+        };
+
+        // --- التقرير الشامل ---
+        window.generateReport = async () => {
+            const reportDiv = document.getElementById('report-content');
+            reportDiv.innerHTML = '<p>جاري جمع البيانات...</p>';
+            
+            const logsSnap = await get(ref(db, `users/${currentUser.uid}/logs`));
+            if(!logsSnap.exists()) { reportDiv.innerHTML = '<p>لا توجد بيانات كافية.</p>'; return; }
+
+            let logs = logsSnap.val();
+            let daysCount = 0; let totalCal = 0, totalWater = 0, totalSteps = 0;
+
+            for(let date in logs) {
+                daysCount++;
+                totalCal += logs[date].calories || 0;
+                totalWater += logs[date].water || 0;
+                totalSteps += logs[date].steps || 0;
+            }
+
+            let weightDiff = currentUser.initialWeight - currentUser.weight;
+            let weightText = weightDiff > 0 ? `نزول ${weightDiff.toFixed(1)} كجم 🎉` : 
+                             weightDiff < 0 ? `زيادة ${Math.abs(weightDiff).toFixed(1)} كجم ⚠️` : `ثبات في الوزن ⚖️`;
+
+            reportDiv.innerHTML = `
+                <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 15px; margin-bottom: 10px;">
+                    <h3 style="color:var(--primary-color)">تغير الوزن</h3>
+                    <p style="font-size: 20px; font-weight: bold;">${weightText}</p>
+                    <small>الوزن عند التسجيل: ${currentUser.initialWeight} كجم</small>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <div class="glass-card" style="padding:10px"><b>معدل السعرات</b><br>${Math.round(totalCal/daysCount)} / يوم</div>
+                    <div class="glass-card" style="padding:10px"><b>معدل الماء</b><br>${Math.round(totalWater/daysCount)} / يوم</div>
+                    <div class="glass-card" style="padding:10px; grid-column: span 2;"><b>إجمالي المشي</b><br>${totalSteps} خطوة</div>
+                </div>
+            `;
+        };
+    </script>
+</body>
+</html>
